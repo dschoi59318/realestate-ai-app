@@ -392,64 +392,58 @@ async function analyze() {
 }
 
 function renderMarkdown(text) {
-  // 마크다운 → HTML 변환
-  let html = text
-    // 제목
-    .replace(/^### (.+)$/gm, '<h3 style="font-size:14px;color:var(--green);margin:14px 0 6px;font-weight:600;">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 style="font-size:16px;color:#f1f5f9;margin:18px 0 8px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:6px;">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 style="font-size:18px;color:#f1f5f9;margin:20px 0 10px;font-weight:700;">$1</h1>')
-    // 굵게
-    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#f1f5f9;">$1</strong>')
-    // 구분선
-    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">')
-    // 줄바꿈
-    .replace(/
-/g, '
-');
-
-  // 테이블 변환
-  html = html.replace(/(\|.+\|
-)+/g, (match) => {
-    const rows = match.trim().split('
-');
-    let tableHtml = '<div style="overflow-x:auto;margin:10px 0;"><table style="width:100%;border-collapse:collapse;font-size:13px;">';
-    rows.forEach((row, i) => {
-      if (row.match(/^\|[\s\-|]+\|$/)) return; // 구분선 행 스킵
-      const cells = row.split('|').filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
-      if (i === 0) {
-        tableHtml += '<thead><tr>' + cells.map(c =>
-          `<th style="background:var(--surface2);padding:8px 10px;text-align:left;border:1px solid var(--border);color:var(--muted);font-weight:600;font-size:11px;letter-spacing:0.05em;">${c.trim()}</th>`
-        ).join('') + '</tr></thead><tbody>';
-      } else {
-        tableHtml += '<tr>' + cells.map((c, ci) =>
-          `<td style="padding:8px 10px;border:1px solid var(--border);color:var(--text);background:${ci===0?'var(--surface2)':'transparent'}">${c.trim()}</td>`
-        ).join('') + '</tr>';
+  if (!text) return '';
+  const lines = text.split('\n');
+  let html = '';
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    // 테이블 감지
+    if (line.startsWith('|') && i+1 < lines.length && lines[i+1].match(/^\|[-| ]+\|/)) {
+      const headers = line.split('|').filter((c,idx,arr) => idx>0 && idx<arr.length-1).map(c=>c.trim());
+      i += 2; // 헤더 + 구분선 스킵
+      let rows = [];
+      while (i < lines.length && lines[i].startsWith('|')) {
+        rows.push(lines[i].split('|').filter((c,idx,arr) => idx>0 && idx<arr.length-1).map(c=>c.trim()));
+        i++;
       }
-    });
-    tableHtml += '</tbody></table></div>';
-    return tableHtml;
-  });
-
-  // 단락 처리
-  const lines = html.split('
-');
-  let result = '';
-  let inList = false;
-  for (const line of lines) {
-    if (line.startsWith('<h') || line.startsWith('<hr') || line.startsWith('<div')) {
-      result += line + '
-';
-    } else if (line.startsWith('- ') || line.startsWith('* ')) {
-      if (!inList) { result += '<ul style="margin:6px 0 6px 20px;color:var(--text);">'; inList = true; }
-      result += `<li style="margin:3px 0;font-size:14px;line-height:1.6;">${line.slice(2)}</li>`;
-    } else {
-      if (inList) { result += '</ul>'; inList = false; }
-      if (line.trim()) result += `<p style="margin:5px 0;font-size:14px;line-height:1.7;color:var(--text);">${line}</p>`;
-      else result += '<br>';
+      html += '<div style="overflow-x:auto;margin:10px 0;">';
+      html += '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+      html += '<thead><tr>' + headers.map(h =>
+        `<th style="background:var(--surface2);padding:8px 10px;text-align:left;border:1px solid var(--border);color:var(--muted);font-weight:600;font-size:11px;">${h}</th>`
+      ).join('') + '</tr></thead>';
+      html += '<tbody>' + rows.map(row =>
+        '<tr>' + row.map((c,ci) =>
+          `<td style="padding:8px 10px;border:1px solid var(--border);color:var(--text);background:${ci===0?'var(--surface2)':'transparent'}">${c}</td>`
+        ).join('') + '</tr>'
+      ).join('') + '</tbody></table></div>';
+      continue;
     }
+    // 제목
+    if (line.startsWith('### ')) {
+      html += `<h3 style="font-size:14px;color:var(--green);margin:14px 0 6px;font-weight:600;">${line.slice(4)}</h3>`;
+    } else if (line.startsWith('## ')) {
+      html += `<h2 style="font-size:16px;color:#f1f5f9;margin:18px 0 8px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:6px;">${line.slice(3)}</h2>`;
+    } else if (line.startsWith('# ')) {
+      html += `<h1 style="font-size:18px;color:#f1f5f9;margin:20px 0 10px;font-weight:700;">${line.slice(2)}</h1>`;
+    } else if (line === '---') {
+      html += '<hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">';
+    } else if (line.startsWith('- ') || line.startsWith('* ')) {
+      html += `<p style="margin:3px 0 3px 16px;font-size:14px;line-height:1.6;color:var(--text);">• ${applyInline(line.slice(2))}</p>`;
+    } else if (line.trim() === '') {
+      html += '<br>';
+    } else {
+      html += `<p style="margin:4px 0;font-size:14px;line-height:1.7;color:var(--text);">${applyInline(line)}</p>`;
+    }
+    i++;
   }
-  if (inList) result += '</ul>';
-  return result;
+  return html;
+}
+
+function applyInline(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#f1f5f9;">$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
 }
 
 function copyResult() {
@@ -457,12 +451,49 @@ function copyResult() {
 }
 function savePDF() {
   const region = document.getElementById('regionName').value;
-  const text = document.querySelector('#resultBox pre')?.innerText || '';
-  const win = window.open('','_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${region} 부동산 분석</title>
-  <style>body{font-family:sans-serif;padding:40px;color:#1e293b;line-height:1.8;}h1{color:#1e3a5f;border-bottom:2px solid #10b981;padding-bottom:10px;}</style></head>
-  <body><h1>🏠 ${region} AI 부동산 분석</h1><pre style="white-space:pre-wrap;">${text}</pre>
-  <script>window.onload=()=>window.print()<\/script></body></html>`);
+  const apt = document.getElementById('aptName').value;
+  const resultHTML = document.getElementById('resultBox').innerHTML;
+  const tradeHTML = document.getElementById('tradeBox').style.display !== 'none'
+    ? document.getElementById('tradeBox').innerHTML : '';
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<title>${region}${apt?' '+apt:''} 부동산 분석</title>
+<style>
+  body { font-family: 'Malgun Gothic', sans-serif; padding: 40px; color: #1e293b; line-height: 1.8; max-width: 900px; margin: 0 auto; }
+  h1 { color: #1e3a5f; border-bottom: 3px solid #10b981; padding-bottom: 10px; margin-bottom: 20px; }
+  h2 { color: #1e3a5f; border-bottom: 1px solid #ddd; padding-bottom: 6px; margin: 20px 0 10px; }
+  h3 { color: #10b981; margin: 14px 0 6px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+  th { background: #f1f5f9; padding: 8px 10px; text-align: left; border: 1px solid #ddd; font-weight: 600; }
+  td { padding: 8px 10px; border: 1px solid #ddd; }
+  tr:nth-child(even) td { background: #f8faff; }
+  p { margin: 5px 0; }
+  strong { color: #1e293b; font-weight: 700; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 15px 0; }
+  .section { margin-bottom: 30px; padding: 20px; background: #f8faff; border-radius: 8px; border: 1px solid #e2e8f0; }
+  .badge { display: inline-block; padding: 4px 10px; background: #d1fae5; color: #065f46; border-radius: 20px; font-size: 12px; margin-bottom: 15px; }
+  @media print {
+    body { padding: 20px; }
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+<h1>🏠 ${region}${apt?' '+apt:''} AI 부동산 분석 보고서</h1>
+<p style="color:#64748b;font-size:13px;">분석일: ${new Date().toLocaleDateString('ko-KR')} | 데이터: 국토교통부 실거래가 + Naver 뉴스 + Claude AI</p>
+<hr>
+${resultHTML}
+<script>
+  // 스타일 정리
+  document.querySelectorAll('[style*="var(--']').forEach(el => {
+    el.style.color = '#1e293b';
+    el.style.background = 'transparent';
+    el.style.borderColor = '#ddd';
+  });
+  window.onload = () => setTimeout(() => window.print(), 500);
+<\/script>
+</body></html>`);
 }
 document.getElementById('regionInput').addEventListener('keypress', e => {
   if (e.key==='Enter') analyze();
