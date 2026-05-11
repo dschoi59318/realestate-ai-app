@@ -114,6 +114,7 @@ body::before { content:''; position:fixed; inset:0; background-image: linear-gra
 .act-btn:hover { border-color:var(--green); color:var(--text); }
 .disclaimer { font-size:11px; color:var(--muted); margin-top:10px; padding:10px 14px; background:rgba(245,158,11,0.05); border:1px solid rgba(245,158,11,0.15); border-radius:8px; display:none; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -203,7 +204,8 @@ body::before { content:''; position:fixed; inset:0; background-image: linear-gra
     <div class="result-box" id="resultBox"></div>
     <div class="action-btns">
       <button class="act-btn" onclick="copyResult()">📋 결과 복사</button>
-      <button class="act-btn" onclick="savePDF()">📄 PDF 저장</button>
+      <button class="act-btn" onclick="downloadPDF()">📄 PDF 다운로드</button>
+      <button class="act-btn" onclick="downloadWord()">📝 Word 다운로드</button>
     </div>
   </div>
   <div class="disclaimer" id="disclaimer">⚠️ 본 분석은 AI가 생성한 정보이며 투자 권유가 아닙니다. 최종 투자 결정은 본인 책임입니다.</div>
@@ -445,6 +447,206 @@ function applyInline(text) {
     .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#f1f5f9;">$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>');
 }
+
+function copyResult() {
+  navigator.clipboard.writeText(document.querySelector('#resultBox pre')?.innerText || '');
+}
+function getPrintContent() {
+  const region = document.getElementById('regionName').value;
+  const apt = document.getElementById('aptName').value;
+
+  // 통계 카드
+  const amtCards = [...document.querySelectorAll('#amountStats .stat-card')].map(c => `
+    <div style="flex:1;text-align:center;padding:12px;background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;">
+      <div style="font-size:11px;color:#6b7280;margin-bottom:4px;">${c.querySelector('.stat-label')?.textContent||''}</div>
+      <div style="font-size:16px;font-weight:700;color:#065f46;">${c.querySelector('.stat-value')?.textContent||''}</div>
+    </div>`).join('');
+
+  const perCards = [...document.querySelectorAll('#perStats .stat-card')].map(c => `
+    <div style="flex:1;text-align:center;padding:12px;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;">
+      <div style="font-size:11px;color:#6b7280;margin-bottom:4px;">${c.querySelector('.stat-label')?.textContent||''}</div>
+      <div style="font-size:16px;font-weight:700;color:#92400e;">${c.querySelector('.stat-value')?.textContent||''}<span style="font-size:11px;">/평</span></div>
+    </div>`).join('');
+
+  // 면적대별
+  const sizeCards = [...document.querySelectorAll('#sizeGrid .size-card')].map(c => `
+    <div style="flex:1;text-align:center;padding:10px;background:#f8faff;border:1px solid #dde3f0;border-radius:8px;">
+      <div style="font-size:11px;color:#6b7280;margin-bottom:4px;">${c.querySelector('.size-label')?.textContent||''}</div>
+      <div style="font-size:14px;font-weight:700;color:#1e3a5f;">${c.querySelector('.size-value')?.textContent||''}</div>
+      <div style="font-size:11px;color:#9ca3af;">${c.querySelector('.size-count')?.textContent||''}</div>
+    </div>`).join('');
+
+  // 아파트별 그룹 테이블
+  const aptRows = [...document.querySelectorAll('.apt-group-item')].map(item => `
+    <tr>
+      <td style="padding:8px 10px;border:1px solid #ddd;font-weight:600;">${item.querySelector('.apt-group-name')?.textContent||''}</td>
+      <td style="padding:8px 10px;border:1px solid #ddd;color:#6b7280;">${item.querySelector('.apt-group-detail')?.textContent||''}</td>
+      <td style="padding:8px 10px;border:1px solid #ddd;font-weight:600;color:#065f46;">${item.querySelector('.apt-group-avg')?.textContent||''}</td>
+      <td style="padding:8px 10px;border:1px solid #ddd;font-weight:600;color:#92400e;">${item.querySelector('.apt-group-per')?.textContent||''}</td>
+    </tr>`).join('');
+
+  // 거래 내역 테이블
+  const tradeRows = [...document.querySelectorAll('.trade-item')].map(item => `
+    <tr>
+      <td style="padding:7px 10px;border:1px solid #ddd;">${item.querySelector('.trade-apt')?.textContent||''}</td>
+      <td style="padding:7px 10px;border:1px solid #ddd;color:#6b7280;font-size:12px;">${item.querySelector('.trade-meta')?.textContent||''}</td>
+      <td style="padding:7px 10px;border:1px solid #ddd;font-weight:600;color:#065f46;">${item.querySelector('.trade-total')?.textContent||''}</td>
+      <td style="padding:7px 10px;border:1px solid #ddd;font-weight:600;color:#92400e;">${item.querySelector('.trade-per')?.textContent||''}</td>
+    </tr>`).join('');
+
+  // AI 분석 결과 (텍스트 추출)
+  function extractClean(el) {
+    let t = '';
+    el.childNodes.forEach(n => {
+      if (n.nodeType === 3) t += n.textContent;
+      else if (n.nodeType === 1) {
+        const tag = n.tagName.toLowerCase();
+        if (tag === 'h1') t += '<h2 style="font-size:17px;color:#1e3a5f;border-bottom:1px solid #ccc;padding-bottom:5px;margin:16px 0 8px;">' + n.textContent + '</h2>';
+        else if (tag === 'h2') t += '<h3 style="font-size:15px;color:#1e3a5f;margin:14px 0 6px;">' + n.textContent + '</h3>';
+        else if (tag === 'h3') t += '<h4 style="font-size:14px;color:#065f46;margin:12px 0 5px;">' + n.textContent + '</h4>';
+        else if (tag === 'hr') t += '<hr style="border:none;border-top:1px solid #ddd;margin:10px 0;">';
+        else if (tag === 'table') {
+          t += '<table style="width:100%;border-collapse:collapse;margin:8px 0;font-size:13px;">';
+          n.querySelectorAll('thead tr').forEach(tr => {
+            t += '<tr>' + [...tr.querySelectorAll('th')].map(th =>
+              `<th style="background:#e8f4f0;padding:7px 10px;border:1px solid #aaa;font-weight:600;text-align:left;">${th.textContent}</th>`
+            ).join('') + '</tr>';
+          });
+          n.querySelectorAll('tbody tr').forEach((tr,i) => {
+            t += '<tr>' + [...tr.querySelectorAll('td')].map(td =>
+              `<td style="padding:7px 10px;border:1px solid #ccc;background:${i%2===0?'white':'#f9f9f9'}">${td.textContent}</td>`
+            ).join('') + '</tr>';
+          });
+          t += '</table>';
+        }
+        else if (tag === 'p') t += '<p style="margin:4px 0;font-size:14px;line-height:1.7;color:#1e293b;">' + extractClean(n) + '</p>';
+        else if (tag === 'strong' || tag === 'b') t += '<strong style="font-weight:700;color:#1e293b;">' + n.textContent + '</strong>';
+        else t += extractClean(n);
+      }
+    });
+    return t;
+  }
+
+  const aiContent = extractClean(document.getElementById('resultBox'));
+  const period = document.getElementById('tradePeriod')?.textContent || '';
+
+  return {
+    region, apt, amtCards, perCards, sizeCards, aptRows, tradeRows, aiContent, period,
+    html: `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>${region}${apt?' '+apt:''} 부동산 분석</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Malgun Gothic','맑은 고딕',sans-serif; padding:30px 40px; color:#1e293b; line-height:1.8; font-size:14px; max-width:900px; }
+  @media print { body { padding:15px 20px; } }
+</style>
+</head>
+<body>
+<h1 style="font-size:22px;color:#1e3a5f;border-bottom:3px solid #10b981;padding-bottom:10px;margin-bottom:6px;">🏠 ${region}${apt?' '+apt:''} AI 부동산 분석 보고서</h1>
+<p style="color:#6b7280;font-size:12px;margin-bottom:16px;">분석일: ${new Date().toLocaleDateString('ko-KR')} | 데이터: 국토교통부 실거래가 + Naver 뉴스 + Claude AI</p>
+<hr style="border:none;border-top:1px solid #ddd;margin:0 0 16px;">
+
+${period ? `<div style="margin-bottom:20px;padding:16px;background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;">
+  <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:10px;letter-spacing:0.05em;">실거래가 통계 (${period})</div>
+  <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">거래가 통계</div>
+  <div style="display:flex;gap:8px;margin-bottom:12px;">${amtCards}</div>
+  <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">평당가 통계</div>
+  <div style="display:flex;gap:8px;margin-bottom:12px;">${perCards}</div>
+  <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">면적대별 평균 거래가</div>
+  <div style="display:flex;gap:8px;">${sizeCards}</div>
+</div>` : ''}
+
+${aptRows ? `<div style="margin-bottom:20px;">
+  <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;letter-spacing:0.05em;">아파트별 거래 현황</div>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr>
+      <th style="background:#e8f4f0;padding:8px 10px;border:1px solid #aaa;text-align:left;">아파트</th>
+      <th style="background:#e8f4f0;padding:8px 10px;border:1px solid #aaa;text-align:left;">평수/건수</th>
+      <th style="background:#e8f4f0;padding:8px 10px;border:1px solid #aaa;text-align:left;">평균 거래가</th>
+      <th style="background:#e8f4f0;padding:8px 10px;border:1px solid #aaa;text-align:left;">평당가</th>
+    </tr></thead>
+    <tbody>${aptRows}</tbody>
+  </table>
+</div>` : ''}
+
+${tradeRows ? `<div style="margin-bottom:20px;">
+  <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;letter-spacing:0.05em;">최근 거래 내역</div>
+  <table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr>
+      <th style="background:#e8f4f0;padding:7px 10px;border:1px solid #aaa;text-align:left;">아파트</th>
+      <th style="background:#e8f4f0;padding:7px 10px;border:1px solid #aaa;text-align:left;">상세정보</th>
+      <th style="background:#e8f4f0;padding:7px 10px;border:1px solid #aaa;text-align:left;">거래가</th>
+      <th style="background:#e8f4f0;padding:7px 10px;border:1px solid #aaa;text-align:left;">평당가</th>
+    </tr></thead>
+    <tbody>${tradeRows}</tbody>
+  </table>
+</div>` : ''}
+
+<div style="margin-bottom:20px;">
+  <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;letter-spacing:0.05em;">AI 분석 결과</div>
+  ${aiContent}
+</div>
+</body></html>`
+  };
+}
+
+function downloadPDF() {
+  const data = getPrintContent();
+  const region = data.region;
+  const apt = data.apt;
+
+  // html2pdf 사용
+  const container = document.createElement('div');
+  container.innerHTML = data.html;
+  container.style.position = 'fixed';
+  container.style.left = '-9999px';
+  document.body.appendChild(container);
+
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: `${region}${apt?' '+apt:''}_부동산분석_${new Date().toLocaleDateString('ko-KR').replace(/\./g,'').replace(/ /g,'')}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(container.querySelector('body')).save().then(() => {
+    document.body.removeChild(container);
+  });
+}
+
+function downloadWord() {
+  const data = getPrintContent();
+  const region = data.region;
+  const apt = data.apt;
+
+  // Word HTML 형식으로 다운로드
+  const wordHTML = `<html xmlns:o='urn:schemas-microsoft-com:office:office'
+    xmlns:w='urn:schemas-microsoft-com:office:word'
+    xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset='utf-8'>
+    <style>
+      body { font-family: '맑은 고딕', sans-serif; font-size: 11pt; color: #1e293b; line-height: 1.6; }
+      h1 { font-size: 18pt; color: #1e3a5f; border-bottom: 2pt solid #10b981; padding-bottom: 6pt; }
+      h2 { font-size: 14pt; color: #1e3a5f; margin-top: 14pt; }
+      h3 { font-size: 13pt; color: #10b981; margin-top: 12pt; }
+      h4 { font-size: 12pt; color: #065f46; }
+      table { width: 100%; border-collapse: collapse; margin: 8pt 0; }
+      th { background: #e8f4f0; padding: 6pt 8pt; border: 1pt solid #aaa; font-weight: bold; }
+      td { padding: 6pt 8pt; border: 1pt solid #ccc; }
+      p { margin: 3pt 0; }
+      strong { font-weight: bold; }
+    </style>
+    </head><body>${data.html.replace(/<html.*?<body>/s,'').replace(/<\/body>.*?<\/html>/s,'')}</body></html>`;
+
+  const blob = new Blob([wordHTML], { type: 'application/msword' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${region}${apt?' '+apt:''}_부동산분석_${new Date().toLocaleDateString('ko-KR').replace(/\./g,'').replace(/ /g,'')}.doc`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 
 function copyResult() {
   navigator.clipboard.writeText(document.querySelector('#resultBox pre')?.innerText || '');
