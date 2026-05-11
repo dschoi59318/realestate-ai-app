@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 부동산 분석</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0e1a;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --border: #1e2d45;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --blue: #3b82f6;
+  --green: #10b981;
+  --orange: #f59e0b;
+  --red: #ef4444;
+  --mono: 'JetBrains Mono', monospace;
+}
+body {
+  font-family: -apple-system, 'Pretendard', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none; z-index: 0;
+}
+.wrap { max-width: 760px; margin: 0 auto; position: relative; z-index: 1; }
+
+.header { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.title { font-size: 22px; font-weight: 600; color: #f1f5f9; }
+.subtitle { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.live-badge { margin-left: auto; font-size: 11px; padding: 3px 10px; border-radius: 20px; background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.3); font-family: var(--mono); }
+
+.form-section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; margin-bottom: 1rem; }
+.form-label { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; display: block; }
+
+/* 지역 검색 */
+.region-wrap { position: relative; margin-bottom: 1rem; }
+.region-input {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); font-size: 15px; font-weight: 500;
+  padding: 12px 16px; outline: none; transition: border-color 0.15s;
+}
+.region-input:focus { border-color: var(--green); }
+.region-input::placeholder { color: var(--muted); font-weight: 400; }
+.region-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: var(--surface); border: 1px solid var(--green);
+  border-top: none; border-radius: 0 0 10px 10px;
+  z-index: 100; max-height: 220px; overflow-y: auto; display: none;
+}
+.region-dropdown.open { display: block; }
+.region-item {
+  padding: 10px 16px; cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px; transition: background 0.1s;
+  display: flex; align-items: center; gap: 8px;
+}
+.region-item:last-child { border-bottom: none; }
+.region-item:hover { background: var(--surface2); }
+.region-name { color: var(--text); font-weight: 500; }
+.region-code { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+.region-selected { font-size: 11px; color: var(--green); margin-top: 4px; padding-left: 4px; display: none; }
+
+/* 아파트명 입력 */
+.apt-input {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text); font-size: 15px;
+  padding: 12px 16px; outline: none; transition: border-color 0.15s;
+  margin-bottom: 1rem;
+}
+.apt-input:focus { border-color: var(--green); }
+.apt-input::placeholder { color: var(--muted); }
+
+/* 분석 관점 태그 */
+.tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+.tag {
+  padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer;
+  border: 1px solid var(--border); color: var(--muted); transition: all 0.15s;
+  background: transparent;
+}
+.tag.active { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.08); }
+
+/* 분석 버튼 */
+.analyze-btn {
+  width: 100%; padding: 14px; background: var(--green); color: #fff;
+  border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; font-family: inherit;
+}
+.analyze-btn:hover { background: #059669; box-shadow: 0 0 20px rgba(16,185,129,0.3); }
+.analyze-btn:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; box-shadow: none; }
+
+/* 소스 칩 */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; display: none; }
+.chip { font-size: 11px; padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); font-family: var(--mono); transition: all 0.2s; }
+.chip.active { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.08); }
+.chip.done { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.08); }
+
+/* 실거래가 박스 */
+.trade-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1rem; overflow: hidden; display: none; }
+.trade-head { padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; }
+.trade-summary { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+.trade-stat { flex: 1; padding: 12px 16px; text-align: center; border-right: 1px solid var(--border); }
+.trade-stat:last-child { border-right: none; }
+.trade-stat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.trade-stat-value { font-size: 16px; font-weight: 600; color: var(--text); }
+.trade-list { max-height: 200px; overflow-y: auto; }
+.trade-item { padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+.trade-item:last-child { border-bottom: none; }
+.trade-apt { color: var(--text); font-weight: 500; }
+.trade-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.trade-price { font-weight: 600; color: var(--green); white-space: nowrap; }
+
+/* 뉴스 박스 */
+.news-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1rem; overflow: hidden; display: none; }
+.news-head { padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); }
+.news-item { padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.5; }
+.news-item:last-child { border-bottom: none; }
+
+/* 결과 박스 */
+.result-wrap { display: none; }
+.result-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.result-tag { font-size: 11px; padding: 3px 10px; border-radius: 4px; background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.3); font-family: var(--mono); letter-spacing: 0.05em; }
+.result-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; font-size: 14px; line-height: 1.8; }
+.result-box.loading { color: var(--muted); font-style: italic; font-family: var(--mono); font-size: 13px; }
+.result-box.error { color: var(--red); border-color: rgba(239,68,68,0.3); }
+.result-box pre { white-space: pre-wrap; font-family: inherit; margin: 0; }
+.data-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-family: var(--mono); margin-bottom: 12px; }
+.data-badge.realtime { background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+.data-badge.cached { background: rgba(100,116,139,0.1); color: var(--muted); border: 1px solid var(--border); }
+
+.action-btns { display: flex; gap: 8px; margin-top: 10px; }
+.act-btn { display: flex; align-items: center; gap: 5px; padding: 7px 14px; font-size: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; transition: all 0.15s; font-family: inherit; }
+.act-btn:hover { border-color: var(--green); color: var(--text); }
+
+.disclaimer { font-size: 11px; color: var(--muted); margin-top: 10px; padding: 10px 14px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.15); border-radius: 8px; display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="dot"></div>
+    <div>
+      <div class="title">AI 부동산 분석</div>
+      <div class="subtitle">국토부 실거래가 + Naver 뉴스 + Claude AI</div>
+    </div>
+    <span class="live-badge">● LIVE</span>
+  </div>
+
+  <div class="form-section">
+
+    <!-- 지역 검색 -->
+    <label class="form-label">지역 검색</label>
+    <div class="region-wrap">
+      <input class="region-input" id="regionInput" type="text"
+        placeholder="지역명 입력 (예: 강남구, 분당구, 해운대구...)"
+        autocomplete="off" oninput="searchRegion(this.value)">
+      <div class="region-dropdown" id="regionDropdown"></div>
+    </div>
+    <div class="region-selected" id="regionSelected">✅ <span id="selectedRegionInfo"></span></div>
+    <input type="hidden" id="regionCode" value="">
+    <input type="hidden" id="regionName" value="">
+
+    <!-- 아파트명 -->
+    <label class="form-label" style="margin-top:1rem;">아파트명 (선택사항)</label>
+    <input class="apt-input" id="aptName" type="text"
+      placeholder="특정 아파트 검색 시 입력 (예: 래미안, 힐스테이트...)">
+
+    <!-- 분석 관점 -->
+    <label class="form-label">분석 관점</label>
+    <div class="tags" id="viewTags">
+      <button class="tag active" onclick="selectTag(this)">종합 분석</button>
+      <button class="tag" onclick="selectTag(this)">시세 분석</button>
+      <button class="tag" onclick="selectTag(this)">투자 분석</button>
+      <button class="tag" onclick="selectTag(this)">실거주 분석</button>
+    </div>
+
+    <!-- 분석 버튼 -->
+    <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">
+      🏠 AI 부동산 분석 받기
+    </button>
+  </div>
+
+  <!-- 소스 칩 -->
+  <div class="chips" id="chips">
+    <span class="chip" id="chip-trade">🏢 국토부 실거래가</span>
+    <span class="chip" id="chip-news">📰 Naver 뉴스</span>
+    <span class="chip" id="chip-ai">🤖 Claude AI</span>
+  </div>
+
+  <!-- 실거래가 박스 -->
+  <div class="trade-box" id="tradeBox">
+    <div class="trade-head">🏢 실거래가 데이터 (국토교통부)</div>
+    <div class="trade-summary" id="tradeSummary"></div>
+    <div class="trade-list" id="tradeList"></div>
+  </div>
+
+  <!-- 뉴스 박스 -->
+  <div class="news-box" id="newsBox">
+    <div class="news-head">📰 실시간 관련 뉴스</div>
+    <div id="newsList"></div>
+  </div>
+
+  <!-- 결과 -->
+  <div class="result-wrap" id="resultWrap">
+    <div class="result-header">
+      <span class="result-tag">ANALYSIS COMPLETE</span>
+    </div>
+    <div class="result-box" id="resultBox"></div>
+    <div class="action-btns">
+      <button class="act-btn" onclick="copyResult()">📋 결과 복사</button>
+      <button class="act-btn" onclick="savePDF()">📄 PDF 저장</button>
+    </div>
+  </div>
+  <div class="disclaimer" id="disclaimer">⚠️ 본 분석은 AI가 생성한 정보이며 투자 권유가 아닙니다. 최종 투자 결정은 본인 책임입니다.</div>
+
+</div>
+
+<script>
+const WORKER_URL = 'https://realestate-ai-proxy.dschoi59318.workers.dev';
+
+// 지역 검색
+let searchTimer = null;
+function searchRegion(query) {
+  document.getElementById('regionCode').value = '';
+  document.getElementById('regionName').value = '';
+  document.getElementById('regionSelected').style.display = 'none';
+
+  const dropdown = document.getElementById('regionDropdown');
+  if (!query || query.length < 1) { dropdown.classList.remove('open'); return; }
+
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(async () => {
+    dropdown.innerHTML = '<div style="padding:10px 16px;font-size:13px;color:var(--muted);">🔍 검색 중...</div>';
+    dropdown.classList.add('open');
+    try {
+      const res = await fetch(`${WORKER_URL}?search=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      if (!data.length) {
+        dropdown.innerHTML = '<div style="padding:10px 16px;font-size:13px;color:var(--muted);">검색 결과 없음</div>';
+        return;
+      }
+      dropdown.innerHTML = data.map(r => `
+        <div class="region-item" onclick="selectRegion('${r.name}','${r.code}')">
+          <span class="region-name">${r.name}</span>
+          <span class="region-code">${r.code}</span>
+        </div>`).join('');
+    } catch(e) {
+      dropdown.innerHTML = '<div style="padding:10px 16px;font-size:13px;color:var(--muted);">검색 실패</div>';
+    }
+  }, 300);
+}
+
+function selectRegion(name, code) {
+  document.getElementById('regionInput').value = name;
+  document.getElementById('regionCode').value = code;
+  document.getElementById('regionName').value = name;
+  document.getElementById('regionDropdown').classList.remove('open');
+  document.getElementById('selectedRegionInfo').textContent = `${name} (${code})`;
+  document.getElementById('regionSelected').style.display = 'block';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.region-wrap'))
+    document.getElementById('regionDropdown').classList.remove('open');
+});
+
+function selectTag(el) {
+  document.querySelectorAll('.tag').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setChip(id, state) {
+  document.getElementById(`chip-${id}`).className = `chip ${state}`;
+}
+
+async function analyze() {
+  const regionCode = document.getElementById('regionCode').value;
+  const regionName = document.getElementById('regionName').value;
+  const aptName = document.getElementById('aptName').value.trim();
+
+  if (!regionCode) { alert('지역을 선택해주세요.'); return; }
+
+  const view = document.querySelector('.tag.active')?.textContent || '종합 분석';
+  const btn = document.getElementById('analyzeBtn');
+  const chips = document.getElementById('chips');
+  const resultWrap = document.getElementById('resultWrap');
+  const resultBox = document.getElementById('resultBox');
+  const tradeBox = document.getElementById('tradeBox');
+  const newsBox = document.getElementById('newsBox');
+  const disclaimer = document.getElementById('disclaimer');
+
+  btn.disabled = true;
+  btn.textContent = '분석 중...';
+  chips.style.display = 'flex';
+  resultWrap.style.display = 'block';
+  tradeBox.style.display = 'none';
+  newsBox.style.display = 'none';
+  disclaimer.style.display = 'none';
+  resultBox.className = 'result-box loading';
+  resultBox.textContent = `${regionName} 실거래가 + 뉴스 수집 중... (30초 내외)`;
+  ['trade','news','ai'].forEach(k => setChip(k, 'active'));
+
+  const prompt = `${regionName}${aptName ? ' '+aptName : ''} 부동산을 ${view} 관점으로 분석해주세요.
+매수/매도/관망 판단을 명확히 제시하고 실거래가 수치를 기반으로 근거를 설명해주세요.`;
+
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        regionCode, regionName, aptName,
+        mode: 'analyze',
+        messages: [{role: 'user', content: prompt}]
+      })
+    });
+
+    if (!res.ok) throw new Error(`Worker 오류: ${res.status}`);
+    const data = await res.json();
+
+    // 실거래가 표시
+    if (data.tradeData && data.hasRealData) {
+      const lines = data.tradeData.split('\n');
+      const avgLine = lines.find(l => l.includes('평균 거래가'));
+      const maxLine = lines.find(l => l.includes('최고 거래가'));
+      const minLine = lines.find(l => l.includes('최저 거래가'));
+      const cntLine = lines.find(l => l.includes('거래건수'));
+
+      const avg = avgLine?.split(':')[1]?.trim() || '-';
+      const max = maxLine?.split(':')[1]?.trim() || '-';
+      const min = minLine?.split(':')[1]?.trim() || '-';
+      const cnt = cntLine?.split(':')[1]?.trim() || '-';
+
+      document.getElementById('tradeSummary').innerHTML = `
+        <div class="trade-stat"><div class="trade-stat-label">평균 거래가</div><div class="trade-stat-value" style="color:var(--green)">${avg}</div></div>
+        <div class="trade-stat"><div class="trade-stat-label">최고 거래가</div><div class="trade-stat-value" style="color:var(--red)">${max}</div></div>
+        <div class="trade-stat"><div class="trade-stat-label">최저 거래가</div><div class="trade-stat-value" style="color:var(--blue)">${min}</div></div>
+        <div class="trade-stat"><div class="trade-stat-label">거래건수</div><div class="trade-stat-value">${cnt}</div></div>
+      `;
+
+      // 거래 목록
+      const tradeLines = lines.filter(l => l.match(/^\d+\./));
+      document.getElementById('tradeList').innerHTML = tradeLines.map(l => {
+        const parts = l.replace(/^\d+\.\s*/,'').split('/');
+        return `<div class="trade-item">
+          <div>
+            <div class="trade-apt">${parts[0]?.trim() || '-'}</div>
+            <div class="trade-detail">${parts.slice(1,4).map(p=>p?.trim()).join(' · ')}</div>
+          </div>
+          <div class="trade-price">${parts[1]?.trim() || '-'}</div>
+        </div>`;
+      }).join('');
+
+      tradeBox.style.display = 'block';
+      setChip('trade', 'done');
+    }
+
+    // 뉴스 표시
+    if (data.newsText) {
+      const newsLines = data.newsText.split('\n').filter(l => l.match(/^\d+\./));
+      document.getElementById('newsList').innerHTML = newsLines.map(l =>
+        `<div class="news-item">${l.replace(/^\d+\.\s*/,'')}</div>`
+      ).join('');
+      newsBox.style.display = 'block';
+      setChip('news', 'done');
+    }
+
+    setChip('ai', 'done');
+
+    const text = data.content?.filter(c => c.type === 'text').map(c => c.text).join('') || '응답 없음';
+    const badge = data.hasRealData
+      ? '<div class="data-badge realtime">📊 국토부 실거래가 + 뉴스 데이터 반영</div>'
+      : '<div class="data-badge cached">📚 AI 학습 데이터 기반 분석</div>';
+
+    resultBox.className = 'result-box';
+    resultBox.innerHTML = badge + '<pre>' + text + '</pre>';
+    disclaimer.style.display = 'block';
+
+  } catch(e) {
+    ['trade','news','ai'].forEach(k => setChip(k, ''));
+    resultBox.className = 'result-box error';
+    resultBox.textContent = '오류: ' + e.message;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🏠 AI 부동산 분석 받기';
+}
+
+function copyResult() {
+  const text = document.querySelector('#resultBox pre')?.innerText || '';
+  navigator.clipboard.writeText(text);
+}
+
+function savePDF() {
+  const region = document.getElementById('regionName').value;
+  const text = document.querySelector('#resultBox pre')?.innerText || '';
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${region} 부동산 분석</title>
+  <style>body{font-family:sans-serif;padding:40px;color:#1e293b;line-height:1.8;}h1{color:#1e3a5f;border-bottom:2px solid #10b981;padding-bottom:10px;}</style></head>
+  <body><h1>🏠 ${region} AI 부동산 분석</h1><pre style="white-space:pre-wrap;">${text}</pre>
+  <script>window.onload=()=>window.print()<\/script></body></html>`);
+}
+
+document.getElementById('regionInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') analyze();
+});
+</script>
+</body>
+</html>
