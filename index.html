@@ -7,146 +7,112 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #0a0e1a;
-  --surface: #111827;
-  --surface2: #1a2235;
-  --border: #1e2d45;
-  --text: #e2e8f0;
-  --muted: #64748b;
-  --blue: #3b82f6;
-  --green: #10b981;
-  --orange: #f59e0b;
-  --red: #ef4444;
-  --mono: 'JetBrains Mono', monospace;
+  --bg: #0a0e1a; --surface: #111827; --surface2: #1a2235;
+  --border: #1e2d45; --text: #e2e8f0; --muted: #64748b;
+  --blue: #3b82f6; --green: #10b981; --orange: #f59e0b;
+  --red: #ef4444; --mono: monospace;
 }
-body {
-  font-family: -apple-system, 'Pretendard', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  padding: 1.5rem;
-}
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background-image:
-    linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none; z-index: 0;
-}
-.wrap { max-width: 760px; margin: 0 auto; position: relative; z-index: 1; }
+body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 1.5rem; }
+body::before { content:''; position:fixed; inset:0; background-image: linear-gradient(rgba(16,185,129,0.02) 1px,transparent 1px), linear-gradient(90deg,rgba(16,185,129,0.02) 1px,transparent 1px); background-size:40px 40px; pointer-events:none; z-index:0; }
+.wrap { max-width: 780px; margin: 0 auto; position: relative; z-index: 1; }
 
-.header { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 2s infinite; }
+.header { display:flex; align-items:center; gap:10px; margin-bottom:2rem; padding-bottom:1rem; border-bottom:1px solid var(--border); }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 10px var(--green); animation:pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-.title { font-size: 22px; font-weight: 600; color: #f1f5f9; }
-.subtitle { font-size: 12px; color: var(--muted); margin-top: 3px; }
-.live-badge { margin-left: auto; font-size: 11px; padding: 3px 10px; border-radius: 20px; background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.3); font-family: var(--mono); }
+.title { font-size:22px; font-weight:600; color:#f1f5f9; }
+.subtitle { font-size:12px; color:var(--muted); margin-top:3px; }
+.live-badge { margin-left:auto; font-size:11px; padding:3px 10px; border-radius:20px; background:rgba(16,185,129,0.1); color:var(--green); border:1px solid rgba(16,185,129,0.3); font-family:var(--mono); }
 
-.form-section { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem; margin-bottom: 1rem; }
-.form-label { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; display: block; }
+.form-section { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:1.25rem; margin-bottom:1rem; }
+.form-label { font-size:11px; color:var(--muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:8px; display:block; }
 
-/* 지역 검색 */
-.region-wrap { position: relative; margin-bottom: 1rem; }
-.region-input {
-  width: 100%; background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 10px; color: var(--text); font-size: 15px; font-weight: 500;
-  padding: 12px 16px; outline: none; transition: border-color 0.15s;
+.region-wrap { position:relative; margin-bottom:1rem; }
+.region-input, .apt-input {
+  width:100%; background:var(--surface2); border:1px solid var(--border);
+  border-radius:10px; color:var(--text); font-size:15px; font-weight:500;
+  padding:12px 16px; outline:none; transition:border-color 0.15s; font-family:inherit;
 }
-.region-input:focus { border-color: var(--green); }
-.region-input::placeholder { color: var(--muted); font-weight: 400; }
-.region-dropdown {
-  position: absolute; top: 100%; left: 0; right: 0;
-  background: var(--surface); border: 1px solid var(--green);
-  border-top: none; border-radius: 0 0 10px 10px;
-  z-index: 100; max-height: 220px; overflow-y: auto; display: none;
-}
-.region-dropdown.open { display: block; }
-.region-item {
-  padding: 10px 16px; cursor: pointer;
-  border-bottom: 1px solid var(--border);
-  font-size: 13px; transition: background 0.1s;
-  display: flex; align-items: center; gap: 8px;
-}
-.region-item:last-child { border-bottom: none; }
-.region-item:hover { background: var(--surface2); }
-.region-name { color: var(--text); font-weight: 500; }
-.region-code { font-size: 11px; color: var(--muted); font-family: var(--mono); }
-.region-selected { font-size: 11px; color: var(--green); margin-top: 4px; padding-left: 4px; display: none; }
+.region-input:focus, .apt-input:focus { border-color:var(--green); }
+.region-input::placeholder, .apt-input::placeholder { color:var(--muted); font-weight:400; }
+.apt-input { margin-bottom:1rem; }
 
-/* 아파트명 입력 */
-.apt-input {
-  width: 100%; background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 10px; color: var(--text); font-size: 15px;
-  padding: 12px 16px; outline: none; transition: border-color 0.15s;
-  margin-bottom: 1rem;
-}
-.apt-input:focus { border-color: var(--green); }
-.apt-input::placeholder { color: var(--muted); }
+.region-dropdown { position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--green); border-top:none; border-radius:0 0 10px 10px; z-index:100; max-height:220px; overflow-y:auto; display:none; }
+.region-dropdown.open { display:block; }
+.region-item { padding:10px 16px; cursor:pointer; border-bottom:1px solid var(--border); font-size:13px; transition:background 0.1s; display:flex; align-items:center; gap:8px; }
+.region-item:last-child { border-bottom:none; }
+.region-item:hover { background:var(--surface2); }
+.region-code { font-size:11px; color:var(--muted); font-family:var(--mono); }
+.region-selected { font-size:11px; color:var(--green); margin-top:4px; padding-left:4px; display:none; }
 
-/* 분석 관점 태그 */
-.tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
-.tag {
-  padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer;
-  border: 1px solid var(--border); color: var(--muted); transition: all 0.15s;
-  background: transparent;
-}
-.tag.active { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.08); }
+.tags { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+.tag { padding:6px 14px; border-radius:20px; font-size:13px; cursor:pointer; border:1px solid var(--border); color:var(--muted); transition:all 0.15s; background:transparent; font-family:inherit; }
+.tag.active { border-color:var(--green); color:var(--green); background:rgba(16,185,129,0.08); }
 
-/* 분석 버튼 */
-.analyze-btn {
-  width: 100%; padding: 14px; background: var(--green); color: #fff;
-  border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
-  cursor: pointer; transition: all 0.15s; font-family: inherit;
-}
-.analyze-btn:hover { background: #059669; box-shadow: 0 0 20px rgba(16,185,129,0.3); }
-.analyze-btn:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; box-shadow: none; }
+.analyze-btn { width:100%; padding:14px; background:var(--green); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; transition:all 0.15s; font-family:inherit; }
+.analyze-btn:hover { background:#059669; box-shadow:0 0 20px rgba(16,185,129,0.3); }
+.analyze-btn:disabled { background:var(--surface2); color:var(--muted); cursor:not-allowed; box-shadow:none; }
 
-/* 소스 칩 */
-.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; display: none; }
-.chip { font-size: 11px; padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); font-family: var(--mono); transition: all 0.2s; }
-.chip.active { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.08); }
-.chip.done { border-color: var(--green); color: var(--green); background: rgba(16,185,129,0.08); }
+.chips { display:none; gap:6px; flex-wrap:wrap; margin-bottom:1rem; }
+.chip { font-size:11px; padding:4px 12px; border-radius:20px; border:1px solid var(--border); color:var(--muted); font-family:var(--mono); transition:all 0.2s; }
+.chip.active { border-color:var(--green); color:var(--green); animation:blink 1s infinite; }
+.chip.done { border-color:var(--green); color:var(--green); background:rgba(16,185,129,0.08); animation:none; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
-/* 실거래가 박스 */
-.trade-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1rem; overflow: hidden; display: none; }
-.trade-head { padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; }
-.trade-summary { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
-.trade-stat { flex: 1; padding: 12px 16px; text-align: center; border-right: 1px solid var(--border); }
-.trade-stat:last-child { border-right: none; }
-.trade-stat-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
-.trade-stat-value { font-size: 16px; font-weight: 600; color: var(--text); }
-.trade-list { max-height: 200px; overflow-y: auto; }
-.trade-item { padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
-.trade-item:last-child { border-bottom: none; }
-.trade-apt { color: var(--text); font-weight: 500; }
-.trade-detail { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.trade-price { font-weight: 600; color: var(--green); white-space: nowrap; }
+/* 통계 카드 */
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:8px; }
+.stat-card { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center; }
+.stat-label { font-size:10px; color:var(--muted); margin-bottom:4px; letter-spacing:0.05em; }
+.stat-value { font-size:15px; font-weight:600; }
+.stat-sub { font-size:10px; color:var(--muted); margin-top:2px; }
 
-/* 뉴스 박스 */
-.news-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 1rem; overflow: hidden; display: none; }
-.news-head { padding: 10px 16px; font-size: 12px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); }
-.news-item { padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.5; }
-.news-item:last-child { border-bottom: none; }
+/* 면적대별 */
+.size-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:1rem; }
+.size-card { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px; text-align:center; }
+.size-label { font-size:11px; color:var(--muted); margin-bottom:4px; }
+.size-value { font-size:13px; font-weight:600; color:var(--text); }
+.size-count { font-size:10px; color:var(--muted); margin-top:2px; }
 
-/* 결과 박스 */
-.result-wrap { display: none; }
-.result-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.result-tag { font-size: 11px; padding: 3px 10px; border-radius: 4px; background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.3); font-family: var(--mono); letter-spacing: 0.05em; }
-.result-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; font-size: 14px; line-height: 1.8; }
-.result-box.loading { color: var(--muted); font-style: italic; font-family: var(--mono); font-size: 13px; }
-.result-box.error { color: var(--red); border-color: rgba(239,68,68,0.3); }
-.result-box pre { white-space: pre-wrap; font-family: inherit; margin: 0; }
-.data-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; padding: 4px 10px; border-radius: 20px; font-family: var(--mono); margin-bottom: 12px; }
-.data-badge.realtime { background: rgba(16,185,129,0.1); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
-.data-badge.cached { background: rgba(100,116,139,0.1); color: var(--muted); border: 1px solid var(--border); }
+/* 아파트별 그룹 */
+.apt-groups { margin-bottom:1rem; }
+.apt-group-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border); font-size:13px; }
+.apt-group-item:last-child { border-bottom:none; }
+.apt-group-name { color:var(--text); font-weight:500; }
+.apt-group-detail { font-size:11px; color:var(--muted); margin-top:2px; }
+.apt-group-price { text-align:right; }
+.apt-group-avg { font-weight:600; color:var(--green); }
+.apt-group-per { font-size:11px; color:var(--orange); margin-top:2px; }
 
-.action-btns { display: flex; gap: 8px; margin-top: 10px; }
-.act-btn { display: flex; align-items: center; gap: 5px; padding: 7px 14px; font-size: 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; transition: all 0.15s; font-family: inherit; }
-.act-btn:hover { border-color: var(--green); color: var(--text); }
+/* 거래 목록 */
+.trade-list { max-height:240px; overflow-y:auto; }
+.trade-item { padding:10px 14px; border-bottom:1px solid var(--border); font-size:13px; display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; }
+.trade-item:last-child { border-bottom:none; }
+.trade-apt { color:var(--text); font-weight:500; }
+.trade-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+.trade-prices { text-align:right; }
+.trade-total { font-weight:600; color:var(--green); }
+.trade-per { font-size:11px; color:var(--orange); margin-top:2px; }
 
-.disclaimer { font-size: 11px; color: var(--muted); margin-top: 10px; padding: 10px 14px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.15); border-radius: 8px; display: none; }
+.box { background:var(--surface); border:1px solid var(--border); border-radius:12px; margin-bottom:1rem; overflow:hidden; display:none; }
+.box-head { padding:10px 16px; font-size:12px; font-weight:600; color:var(--muted); border-bottom:1px solid var(--border); letter-spacing:0.05em; }
+
+.news-item { padding:10px 16px; border-bottom:1px solid var(--border); font-size:13px; line-height:1.5; color:var(--text); }
+.news-item:last-child { border-bottom:none; }
+
+.result-wrap { display:none; }
+.result-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.result-tag { font-size:11px; padding:3px 10px; border-radius:4px; background:rgba(16,185,129,0.1); color:var(--green); border:1px solid rgba(16,185,129,0.3); font-family:var(--mono); letter-spacing:0.05em; }
+.result-box { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.25rem; font-size:14px; line-height:1.8; }
+.result-box.loading { color:var(--muted); font-style:italic; font-family:var(--mono); font-size:13px; }
+.result-box.error { color:var(--red); border-color:rgba(239,68,68,0.3); }
+.result-box pre { white-space:pre-wrap; font-family:inherit; margin:0; }
+.data-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:4px 10px; border-radius:20px; font-family:var(--mono); margin-bottom:12px; }
+.data-badge.realtime { background:rgba(16,185,129,0.1); color:var(--green); border:1px solid rgba(16,185,129,0.3); }
+.data-badge.cached { background:rgba(100,116,139,0.1); color:var(--muted); border:1px solid var(--border); }
+
+.action-btns { display:flex; gap:8px; margin-top:10px; }
+.act-btn { display:flex; align-items:center; gap:5px; padding:7px 14px; font-size:12px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; color:var(--muted); cursor:pointer; transition:all 0.15s; font-family:inherit; }
+.act-btn:hover { border-color:var(--green); color:var(--text); }
+.disclaimer { font-size:11px; color:var(--muted); margin-top:10px; padding:10px 14px; background:rgba(245,158,11,0.05); border:1px solid rgba(245,158,11,0.15); border-radius:8px; display:none; }
 </style>
 </head>
 <body>
@@ -156,14 +122,12 @@ body::before {
     <div class="dot"></div>
     <div>
       <div class="title">AI 부동산 분석</div>
-      <div class="subtitle">국토부 실거래가 + Naver 뉴스 + Claude AI</div>
+      <div class="subtitle">국토부 실거래가 + 평당가 분석 + Naver 뉴스 + Claude AI</div>
     </div>
     <span class="live-badge">● LIVE</span>
   </div>
 
   <div class="form-section">
-
-    <!-- 지역 검색 -->
     <label class="form-label">지역 검색</label>
     <div class="region-wrap">
       <input class="region-input" id="regionInput" type="text"
@@ -175,12 +139,10 @@ body::before {
     <input type="hidden" id="regionCode" value="">
     <input type="hidden" id="regionName" value="">
 
-    <!-- 아파트명 -->
     <label class="form-label" style="margin-top:1rem;">아파트명 (선택사항)</label>
     <input class="apt-input" id="aptName" type="text"
       placeholder="특정 아파트 검색 시 입력 (예: 래미안, 힐스테이트...)">
 
-    <!-- 분석 관점 -->
     <label class="form-label">분석 관점</label>
     <div class="tags" id="viewTags">
       <button class="tag active" onclick="selectTag(this)">종합 분석</button>
@@ -189,37 +151,55 @@ body::before {
       <button class="tag" onclick="selectTag(this)">실거주 분석</button>
     </div>
 
-    <!-- 분석 버튼 -->
     <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">
       🏠 AI 부동산 분석 받기
     </button>
   </div>
 
-  <!-- 소스 칩 -->
   <div class="chips" id="chips">
     <span class="chip" id="chip-trade">🏢 국토부 실거래가</span>
     <span class="chip" id="chip-news">📰 Naver 뉴스</span>
     <span class="chip" id="chip-ai">🤖 Claude AI</span>
   </div>
 
-  <!-- 실거래가 박스 -->
-  <div class="trade-box" id="tradeBox">
-    <div class="trade-head">🏢 실거래가 데이터 (국토교통부)</div>
-    <div class="trade-summary" id="tradeSummary"></div>
-    <div class="trade-list" id="tradeList"></div>
+  <!-- 실거래가 통계 박스 -->
+  <div class="box" id="tradeBox">
+    <div class="box-head">🏢 실거래가 통계 (국토교통부) — <span id="tradePeriod"></span></div>
+    <div style="padding:12px 14px;">
+
+      <!-- 거래가 통계 -->
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:0.05em;">거래가 통계</div>
+      <div class="stats-grid" id="amountStats"></div>
+
+      <!-- 평당가 통계 -->
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;margin-top:12px;letter-spacing:0.05em;">평당가 통계</div>
+      <div class="stats-grid" id="perStats"></div>
+
+      <!-- 면적대별 -->
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;margin-top:12px;letter-spacing:0.05em;">면적대별 평균 거래가</div>
+      <div class="size-grid" id="sizeGrid"></div>
+
+      <!-- 아파트별 그룹 -->
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;margin-top:12px;letter-spacing:0.05em;">아파트별 거래 현황</div>
+      <div class="apt-groups box" style="display:block;margin-bottom:0;" id="aptGroups"></div>
+
+      <!-- 거래 목록 -->
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;margin-top:12px;letter-spacing:0.05em;">최근 거래 내역</div>
+      <div class="box" style="display:block;margin-bottom:0;">
+        <div class="trade-list" id="tradeList"></div>
+      </div>
+    </div>
   </div>
 
-  <!-- 뉴스 박스 -->
-  <div class="news-box" id="newsBox">
-    <div class="news-head">📰 실시간 관련 뉴스</div>
+  <!-- 뉴스 -->
+  <div class="box" id="newsBox">
+    <div class="box-head">📰 실시간 관련 뉴스</div>
     <div id="newsList"></div>
   </div>
 
   <!-- 결과 -->
   <div class="result-wrap" id="resultWrap">
-    <div class="result-header">
-      <span class="result-tag">ANALYSIS COMPLETE</span>
-    </div>
+    <div class="result-header"><span class="result-tag">ANALYSIS COMPLETE</span></div>
     <div class="result-box" id="resultBox"></div>
     <div class="action-btns">
       <button class="act-btn" onclick="copyResult()">📋 결과 복사</button>
@@ -229,39 +209,30 @@ body::before {
   <div class="disclaimer" id="disclaimer">⚠️ 본 분석은 AI가 생성한 정보이며 투자 권유가 아닙니다. 최종 투자 결정은 본인 책임입니다.</div>
 
 </div>
-
 <script>
 const WORKER_URL = 'https://realestate-ai-proxy.dschoi59318.workers.dev';
 
-// 지역 검색
 let searchTimer = null;
 function searchRegion(query) {
   document.getElementById('regionCode').value = '';
   document.getElementById('regionName').value = '';
   document.getElementById('regionSelected').style.display = 'none';
-
-  const dropdown = document.getElementById('regionDropdown');
-  if (!query || query.length < 1) { dropdown.classList.remove('open'); return; }
-
+  const dd = document.getElementById('regionDropdown');
+  if (!query) { dd.classList.remove('open'); return; }
   clearTimeout(searchTimer);
   searchTimer = setTimeout(async () => {
-    dropdown.innerHTML = '<div style="padding:10px 16px;font-size:13px;color:var(--muted);">🔍 검색 중...</div>';
-    dropdown.classList.add('open');
+    dd.innerHTML = '<div style="padding:10px 16px;font-size:13px;color:var(--muted);">🔍 검색 중...</div>';
+    dd.classList.add('open');
     try {
       const res = await fetch(`${WORKER_URL}?search=${encodeURIComponent(query)}`);
       const data = await res.json();
-      if (!data.length) {
-        dropdown.innerHTML = '<div style="padding:10px 16px;font-size:13px;color:var(--muted);">검색 결과 없음</div>';
-        return;
-      }
-      dropdown.innerHTML = data.map(r => `
+      if (!data.length) { dd.innerHTML = '<div style="padding:10px 16px;font-size:13px;color:var(--muted);">검색 결과 없음</div>'; return; }
+      dd.innerHTML = data.map(r => `
         <div class="region-item" onclick="selectRegion('${r.name}','${r.code}')">
-          <span class="region-name">${r.name}</span>
+          <span>${r.name}</span>
           <span class="region-code">${r.code}</span>
         </div>`).join('');
-    } catch(e) {
-      dropdown.innerHTML = '<div style="padding:10px 16px;font-size:13px;color:var(--muted);">검색 실패</div>';
-    }
+    } catch(e) { dd.innerHTML = '<div style="padding:10px 16px;font-size:13px;color:var(--muted);">검색 실패</div>'; }
   }, 300);
 }
 
@@ -288,11 +259,12 @@ function setChip(id, state) {
   document.getElementById(`chip-${id}`).className = `chip ${state}`;
 }
 
+function fmt(n) { return n > 0 ? n.toLocaleString() + '만원' : '-'; }
+
 async function analyze() {
   const regionCode = document.getElementById('regionCode').value;
   const regionName = document.getElementById('regionName').value;
   const aptName = document.getElementById('aptName').value.trim();
-
   if (!regionCode) { alert('지역을 선택해주세요.'); return; }
 
   const view = document.querySelector('.tag.active')?.textContent || '종합 분석';
@@ -304,86 +276,106 @@ async function analyze() {
   const newsBox = document.getElementById('newsBox');
   const disclaimer = document.getElementById('disclaimer');
 
-  btn.disabled = true;
-  btn.textContent = '분석 중...';
+  btn.disabled = true; btn.textContent = '분석 중...';
   chips.style.display = 'flex';
   resultWrap.style.display = 'block';
   tradeBox.style.display = 'none';
   newsBox.style.display = 'none';
   disclaimer.style.display = 'none';
   resultBox.className = 'result-box loading';
-  resultBox.textContent = `${regionName} 실거래가 + 뉴스 수집 중... (30초 내외)`;
-  ['trade','news','ai'].forEach(k => setChip(k, 'active'));
+  resultBox.textContent = `${regionName} 실거래가 수집 중... (30초 내외)`;
+  ['trade','news','ai'].forEach(k => setChip(k,'active'));
 
-  const prompt = `${regionName}${aptName ? ' '+aptName : ''} 부동산을 ${view} 관점으로 분석해주세요.
-매수/매도/관망 판단을 명확히 제시하고 실거래가 수치를 기반으로 근거를 설명해주세요.`;
+  const prompt = `${regionName}${aptName?' '+aptName:''} 부동산을 ${view} 관점으로 분석해주세요. 평당가를 중심으로 면적대별로 구분하여 매수/매도/관망 판단을 제시해주세요.`;
 
   try {
     const res = await fetch(WORKER_URL, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         regionCode, regionName, aptName,
         mode: 'analyze',
-        messages: [{role: 'user', content: prompt}]
+        messages: [{role:'user', content:prompt}]
       })
     });
-
     if (!res.ok) throw new Error(`Worker 오류: ${res.status}`);
     const data = await res.json();
+    const tr = data.tradeResult;
 
-    // 실거래가 표시
-    if (data.tradeData && data.hasRealData) {
-      const lines = data.tradeData.split('\n');
-      const avgLine = lines.find(l => l.includes('평균 거래가'));
-      const maxLine = lines.find(l => l.includes('최고 거래가'));
-      const minLine = lines.find(l => l.includes('최저 거래가'));
-      const cntLine = lines.find(l => l.includes('거래건수'));
+    // 실거래가 통계 표시
+    if (tr?.stats) {
+      const s = tr.stats;
+      const today = new Date();
+      const prev = today.getMonth() === 0
+        ? `${today.getFullYear()-1}12`
+        : `${today.getFullYear()}${String(today.getMonth()).padStart(2,'0')}`;
+      const curr = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}`;
+      document.getElementById('tradePeriod').textContent = `${prev}~${curr} / ${s.total}건`;
 
-      const avg = avgLine?.split(':')[1]?.trim() || '-';
-      const max = maxLine?.split(':')[1]?.trim() || '-';
-      const min = minLine?.split(':')[1]?.trim() || '-';
-      const cnt = cntLine?.split(':')[1]?.trim() || '-';
-
-      document.getElementById('tradeSummary').innerHTML = `
-        <div class="trade-stat"><div class="trade-stat-label">평균 거래가</div><div class="trade-stat-value" style="color:var(--green)">${avg}</div></div>
-        <div class="trade-stat"><div class="trade-stat-label">최고 거래가</div><div class="trade-stat-value" style="color:var(--red)">${max}</div></div>
-        <div class="trade-stat"><div class="trade-stat-label">최저 거래가</div><div class="trade-stat-value" style="color:var(--blue)">${min}</div></div>
-        <div class="trade-stat"><div class="trade-stat-label">거래건수</div><div class="trade-stat-value">${cnt}</div></div>
+      document.getElementById('amountStats').innerHTML = `
+        <div class="stat-card"><div class="stat-label">평균 거래가</div><div class="stat-value" style="color:var(--green)">${fmt(s.avgAmount)}</div></div>
+        <div class="stat-card"><div class="stat-label">최고 거래가</div><div class="stat-value" style="color:var(--red)">${fmt(s.maxAmount)}</div></div>
+        <div class="stat-card"><div class="stat-label">최저 거래가</div><div class="stat-value" style="color:var(--blue)">${fmt(s.minAmount)}</div></div>
+      `;
+      document.getElementById('perStats').innerHTML = `
+        <div class="stat-card"><div class="stat-label">평균 평당가</div><div class="stat-value" style="color:var(--orange)">${fmt(s.avgPerPyeong)}</div><div class="stat-sub">/ 평</div></div>
+        <div class="stat-card"><div class="stat-label">최고 평당가</div><div class="stat-value" style="color:var(--red)">${fmt(s.maxPerPyeong)}</div><div class="stat-sub">/ 평</div></div>
+        <div class="stat-card"><div class="stat-label">최저 평당가</div><div class="stat-value" style="color:var(--blue)">${fmt(s.minPerPyeong)}</div><div class="stat-sub">/ 평</div></div>
+      `;
+      document.getElementById('sizeGrid').innerHTML = `
+        <div class="size-card"><div class="size-label">소형 (25평 미만)</div><div class="size-value">${fmt(s.small.avg)}</div><div class="size-count">${s.small.count}건</div></div>
+        <div class="size-card"><div class="size-label">중형 (25~40평)</div><div class="size-value">${fmt(s.mid.avg)}</div><div class="size-count">${s.mid.count}건</div></div>
+        <div class="size-card"><div class="size-label">대형 (40평 이상)</div><div class="size-value">${fmt(s.large.avg)}</div><div class="size-count">${s.large.count}건</div></div>
       `;
 
+      // 아파트별 그룹
+      if (tr.aptGroups?.length > 0) {
+        document.getElementById('aptGroups').innerHTML = tr.aptGroups.map(g => `
+          <div class="apt-group-item">
+            <div>
+              <div class="apt-group-name">${g.apt}</div>
+              <div class="apt-group-detail">${g.minPyeong}~${g.maxPyeong}평 · ${g.count}건</div>
+            </div>
+            <div class="apt-group-price">
+              <div class="apt-group-avg">${fmt(g.avgAmount)}</div>
+              <div class="apt-group-per">평당 ${fmt(g.avgPerPyeong)}</div>
+            </div>
+          </div>`).join('');
+      }
+
       // 거래 목록
-      const tradeLines = lines.filter(l => l.match(/^\d+\./));
-      document.getElementById('tradeList').innerHTML = tradeLines.map(l => {
-        const parts = l.replace(/^\d+\.\s*/,'').split('/');
-        return `<div class="trade-item">
-          <div>
-            <div class="trade-apt">${parts[0]?.trim() || '-'}</div>
-            <div class="trade-detail">${parts.slice(1,4).map(p=>p?.trim()).join(' · ')}</div>
-          </div>
-          <div class="trade-price">${parts[1]?.trim() || '-'}</div>
-        </div>`;
-      }).join('');
+      if (tr.trades?.length > 0) {
+        document.getElementById('tradeList').innerHTML = tr.trades.map(t => `
+          <div class="trade-item">
+            <div>
+              <div class="trade-apt">${t.apt} ${t.dong} ${t.floor}층</div>
+              <div class="trade-meta">${t.pyeong}평(${t.area}㎡) · 건축${t.buildYear}년 · ${t.year}.${t.month}.${t.day}</div>
+            </div>
+            <div class="trade-prices">
+              <div class="trade-total">${fmt(t.amount)}</div>
+              <div class="trade-per">평당 ${fmt(t.perPyeong)}</div>
+            </div>
+          </div>`).join('');
+      }
 
       tradeBox.style.display = 'block';
-      setChip('trade', 'done');
+      setChip('trade','done');
     }
 
-    // 뉴스 표시
+    // 뉴스
     if (data.newsText) {
-      const newsLines = data.newsText.split('\n').filter(l => l.match(/^\d+\./));
-      document.getElementById('newsList').innerHTML = newsLines.map(l =>
+      const lines = data.newsText.split('\n').filter(l => l.match(/^\d+\./));
+      document.getElementById('newsList').innerHTML = lines.map(l =>
         `<div class="news-item">${l.replace(/^\d+\.\s*/,'')}</div>`
       ).join('');
       newsBox.style.display = 'block';
-      setChip('news', 'done');
+      setChip('news','done');
     }
+    setChip('ai','done');
 
-    setChip('ai', 'done');
-
-    const text = data.content?.filter(c => c.type === 'text').map(c => c.text).join('') || '응답 없음';
+    const text = data.content?.filter(c=>c.type==='text').map(c=>c.text).join('') || '응답 없음';
     const badge = data.hasRealData
-      ? '<div class="data-badge realtime">📊 국토부 실거래가 + 뉴스 데이터 반영</div>'
+      ? '<div class="data-badge realtime">📊 국토부 실거래가 + 평당가 분석 반영</div>'
       : '<div class="data-badge cached">📚 AI 학습 데이터 기반 분석</div>';
 
     resultBox.className = 'result-box';
@@ -391,32 +383,28 @@ async function analyze() {
     disclaimer.style.display = 'block';
 
   } catch(e) {
-    ['trade','news','ai'].forEach(k => setChip(k, ''));
+    ['trade','news','ai'].forEach(k => setChip(k,''));
     resultBox.className = 'result-box error';
     resultBox.textContent = '오류: ' + e.message;
   }
-
   btn.disabled = false;
   btn.textContent = '🏠 AI 부동산 분석 받기';
 }
 
 function copyResult() {
-  const text = document.querySelector('#resultBox pre')?.innerText || '';
-  navigator.clipboard.writeText(text);
+  navigator.clipboard.writeText(document.querySelector('#resultBox pre')?.innerText || '');
 }
-
 function savePDF() {
   const region = document.getElementById('regionName').value;
   const text = document.querySelector('#resultBox pre')?.innerText || '';
-  const win = window.open('', '_blank');
+  const win = window.open('','_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${region} 부동산 분석</title>
   <style>body{font-family:sans-serif;padding:40px;color:#1e293b;line-height:1.8;}h1{color:#1e3a5f;border-bottom:2px solid #10b981;padding-bottom:10px;}</style></head>
   <body><h1>🏠 ${region} AI 부동산 분석</h1><pre style="white-space:pre-wrap;">${text}</pre>
   <script>window.onload=()=>window.print()<\/script></body></html>`);
 }
-
 document.getElementById('regionInput').addEventListener('keypress', e => {
-  if (e.key === 'Enter') analyze();
+  if (e.key==='Enter') analyze();
 });
 </script>
 </body>
